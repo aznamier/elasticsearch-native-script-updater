@@ -8,7 +8,7 @@ public class NativeScriptUpdaterPlugin extends AbstractPlugin {
 
     @Override
     public String name() {
-        return "elasticsearch-native-script-updater";
+        return "native-script-updater";
     }
 
     /**
