@@ -3,20 +3,23 @@ Native Script Updater Plugin for Elasticsearch
 
 This plugin define the native script "updater".
 
-
 It can be used during update requests.
 
 Here are the reasons why one would want to use this instead of the
 standard update builtin with Elasticsearch:
 
 * Security: it does not require dynamic scripting which is disabled by default
-  since 1.2.1
+  since elasticsearch-1.2.0
 * In a single execution all types of manipulations of the document are
   done
 * Array manipulations are somewhat easier than MVEL scripts: arrays are
-  merged, empty objects are deleted.
+  merged, after a removal empty ancestors are deleted recursively.
 * Performance is at least as good as MVEL: no wrapping/unwrapping we stay in pure
   compiled java land here.
+
+Note that if your update consists of merging a document on an existing
+one then there is no need for a script and one should stick to the
+standard update API.
 
 Usage:
 ------
@@ -77,5 +80,5 @@ Same than Elasticsearch.
 
 Contributions
 -------------
-Contributions are welcome, file issues and PR with Github; tests are
-highly valued.
+Contributions are welcome, please file issues and PR on Github; tests are
+highly regarded.
