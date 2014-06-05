@@ -4,7 +4,7 @@ import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.script.ScriptModule;
 import org.elasticsearch.script.updater.UpdaterScript;
 
-public class NativeScriptExamplesPlugin extends AbstractPlugin {
+public class NativeScriptUpdaterPlugin extends AbstractPlugin {
 
     @Override
     public String name() {
