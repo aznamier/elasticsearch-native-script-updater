@@ -169,6 +169,9 @@ public class UpdaterScriptTests extends AbstractSearchScriptTests {
 		.startObject()
 			.field("name", "rec1")
 			.field("tags", new String[] {"elasticsearch", "wow"})
+			.startObject("address")
+				.field("country", "England")
+			.endObject()
 		.endObject();
 		prepareTest(source);
 
@@ -181,12 +184,20 @@ public class UpdaterScriptTests extends AbstractSearchScriptTests {
 		values.add("wow");
 		my.put("tags", values);
 		params.put("my", my);
+		
+		// Merge the existing name with another name:
+		List<String> otherCountry = new ArrayList<String>();
+		otherCountry.add("France");
+		Map<String, Object> address = new HashMap<String, Object>();
+		address.put("country", otherCountry);
+		params.put("address", address);
 
 		Map<String, Object> res = updateAndGetResponse("doc", params);
-		//{name=First article, my={tags=[hello, wow]}, tags=[elasticsearch, wow]}
+		//{name=First article, my={tags=[hello, wow]}, tags=[elasticsearch, wow], address={country:[France,England]}}
 		assertEquals("First article", res.get("name"));
 		assertEquals(2, ((List<?>)res.get("tags")).size());
 		assertEquals(2, ((List<?>)((Map<?, ?>) res.get("my")).get("tags")).size());
+		assertEquals(2, ((List<?>)((Map<?, ?>) res.get("address")).get("country")).size());
 	}
 	
 	@Test
@@ -260,28 +271,29 @@ public class UpdaterScriptTests extends AbstractSearchScriptTests {
 		assertEquals("New York City", (String)((Map<?,?>) res.get("address")).get("city"));
 	}
 
-	/** "script": "updater", "lang": "native",
-	*   "params": {
-	*	 "doc" : {
-	*	   "name" : "First article",
-	*	   "my" : {
-	*		 "tags" : [ "elasticsearch", "search" ]
-	*	   },
-	*	   "address" : {
-	*		 "city" : "
-	*	   }
-	*	 },
-	*	 "remove": [ "address.city", "name" ],
-	*	 "set"   : { "something.tags" : [ "sport", "entertainment", "game" ] }
-	*	 "removeItems": { "my.tags" : [ "wow" ], "my.tags": ["foo"] }, 
-	*	 "appendItems": { "my.tags" : [ "elasticsearch" ] },
-	*	 "mergeItems"   : { "my.tags" : [ "bonsai" ] },
-	*	 "orderedActions" : [
-	*	   { "remove": [ "address.city", "name" ] },
-	*	   { "mergeItems" : { "my.tags" : [ "bonsai" ] } }
-	*	 ]
-	*   } */
-
+	/**
+	 *  "script": "updater", "lang": "native",
+	 *   "params": {
+	 *	 "doc" : {
+	 *	   "name" : "First article",
+	 *	   "my" : {
+	 *		 "tags" : [ "elasticsearch", "search" ]
+	 *	   },
+	 *	   "address" : {
+	 *		 "city" : "
+	 *	   }
+	 *	 },
+	 *	 "remove": [ "address.city", "name" ],
+	 *	 "set"   : { "something.tags" : [ "sport", "entertainment", "game" ] }
+	 *	 "removeItems": { "my.tags" : [ "wow" ], "my.tags": ["foo"] }, 
+	 *	 "appendItems": { "my.tags" : [ "elasticsearch" ] },
+	 *	 "mergeItems"   : { "my.tags" : [ "bonsai" ] },
+	 *	 "orderedActions" : [
+	 *	   { "remove": [ "address.city", "name" ] },
+	 *	   { "mergeItems" : { "my.tags" : [ "bonsai" ] } }
+	 *	 ]
+	 *   }
+	 */
 	private Map<String, Object> updateAndGetResponse(String action, Object values) {
 		// Update using the script
 		client().prepareUpdate(getIndex(), "article", "1")

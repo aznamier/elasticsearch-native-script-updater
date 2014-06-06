@@ -306,6 +306,8 @@ public class UpdaterScript  extends AbstractSearchScript {
      * it overrides the one in source unless:
      * - both are Maps, in which case it recursively updated it.
      * - both are Arrays, in which case it adds the entries from the changes unless they existed already.
+     * - when the change's value is an array and the source is a value, change the source into an array, add the
+     * original value, then merge the changes values into it.
      * <p>
      * Code forked from @see org.elasticsearch.common.xcontent.XContentHelper#update
      * which is the method used by the update API for the <code>doc</code>
@@ -322,18 +324,25 @@ public class UpdaterScript  extends AbstractSearchScript {
                 source.put(changesEntry.getKey(), changesEntry.getValue());
                 atLeastOneChange = true;
             } else {
-            	Object changesKey = changesEntry.getKey();
+            	String changesKey = changesEntry.getKey();
             	Object changesValue = changesEntry.getValue();
             	Object sourceValue = source.get(changesKey);
                 if (sourceValue instanceof Map && changesValue instanceof Map) {
                     // recursive merge maps
                 	atLeastOneChange = mergeChanges((Map<String, Object>) sourceValue,
                 			(Map<String, Object>) changesValue) || atLeastOneChange;
-                } else if (sourceValue instanceof List && changesValue instanceof List) {
-                	// combine and check for uniqueness.
+                } else if (changesValue instanceof List) {
+                	List<Object> sourceList;
+                	if (sourceValue instanceof List) {
+                		sourceList = (List<Object>)sourceValue;
+                	} else {
+                		sourceList = new ArrayList<Object>();
+                		sourceList.add(sourceValue);
+                		source.put(changesKey, sourceList);
+                	}
+                	// merge: combine and check for uniqueness.
                 	// note: this does not handle deep object structures in the list.
                 	// only works for items that are 'simple' values.
-                	List<Object> sourceList = (List<Object>)sourceValue;
                 	for (Object o : (List<Object>)changesValue) {
                 		if (!sourceList.contains(o)) {
                 			sourceList.add(o);
@@ -342,10 +351,10 @@ public class UpdaterScript  extends AbstractSearchScript {
                 	}
                 } else {
                     // update the field
-                	Object oldValue = source.get(changesEntry.getKey());
-                	if (oldValue != changesEntry.getValue()) {
+                	Object oldValue = source.get(changesKey);
+                	if (oldValue != changesValue) {
                 		atLeastOneChange = true;
-                		source.put(changesEntry.getKey(), changesEntry.getValue());
+                		source.put(changesKey, changesValue);
                 	}
                 }
             }
