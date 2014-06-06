@@ -20,11 +20,6 @@ standard update built-in with Elasticsearch:
 * Performance is at least as good as MVEL: no wrapping/unwrapping we stay in pure
   compiled java land here.
 
-When not to use it
-------------------
-* merge a document where arrays overrides each other and no removals take place
-* doc_as_upsert
-
 Usage:
 ------
 Here is a show-case example all the manipulations supported:
@@ -77,6 +72,16 @@ Installation
 ```
 bin/plugin -install native-script-updater --url https://github.com/sutoiku/elasticsearch-native-script-updater/releases/download/1.0.0/elasticsearch-native-script-updater-1.0.0.zip
 ```
+
+When not to use it
+------------------
+When the built-in updates is enough, no need to use the script:
+* merge a document where arrays overrides each other and no removals take place
+It would work fine though.
+
+Features not supported:
+* Increment values and other scripted updates
+* Return a the \_source or a set of fields in the response
 
 License
 -------
