@@ -50,6 +50,10 @@ import org.elasticsearch.script.NativeScriptFactory;
  *     "removeItems": { "my.tags" : [ "wow" ], "my.tags": ["foo"] }, 
  *     "appendItems": { "my.tags" : [ "elasticsearch" ] },
  *     "mergeItems"   : { "my.tags" : [ "bonsai" ] },
+ *     "incr" : [ "counter" ],
+ *     "incrBy" : { "counter" : 2 },
+ *     "decr" : [ "counter" ],
+ *     "decrBy" : { "counter" : 2 },
  *     "orderedActions" : [
  *       { "remove": [ "address.city", "name" ] },
  *       { "mergeItems" : { "my.tags" : [ "bonsai" ] } }
@@ -142,6 +146,10 @@ public class UpdaterScript  extends AbstractSearchScript {
 					atLeastOneChange = execRemoveItems(path, getEntryValueAsList(entry)) || atLeastOneChange;
 				} else if ("set".equals(action)) {
 					atLeastOneChange = execSet(path, entry.getValue()) || atLeastOneChange;
+				} else if ("incrBy".equals(action)) {
+					atLeastOneChange = execAddition(path, (Long)entry.getValue(), true, false) || atLeastOneChange;
+				} else if ("decrBy".equals(action)) {
+					atLeastOneChange = execAddition(path, (Long)entry.getValue(), false, false) || atLeastOneChange;
 				} else {
 					System.err.println("Invalid operation.");
 				}
@@ -150,10 +158,20 @@ public class UpdaterScript  extends AbstractSearchScript {
 			for (Object v : (List<?>) value) {
 				if ("remove".equals(action)) {
 					atLeastOneChange = execRemove((String)v) || atLeastOneChange;
+				} else if ("decr".equals(action)) {
+					atLeastOneChange = execAddition((String)v, -1, true, true) || atLeastOneChange;
+				} else if ("incr".equals(action)) {
+					atLeastOneChange = execAddition((String)v, 1, true, true) || atLeastOneChange;
 				}
 			}
-		} else if (value instanceof String && "remove".equals(action)) {
-			atLeastOneChange = execRemove((String)value) || atLeastOneChange;
+		} else if (value instanceof String) {
+			if ("remove".equals(action)) {
+				atLeastOneChange = execRemove((String)value) || atLeastOneChange;
+			} else if ("decr".equals(action)) {
+				atLeastOneChange = execAddition((String)value, -1, true, true) || atLeastOneChange;
+			} else if ("incr".equals(action)) {
+				atLeastOneChange = execAddition((String)value, 1, true, true) || atLeastOneChange;
+			}
 		}
 		return atLeastOneChange;
     }
@@ -362,5 +380,21 @@ public class UpdaterScript  extends AbstractSearchScript {
     	return atLeastOneChange;
     }
 
+    private boolean execAddition(String path, long nb, boolean isPositive, boolean setToZeroWhenUnexistent) {
+    	Map<String,Object> parent = (Map<String,Object>) selectParent(path, true);
+    	String leafName = getLeafName(path);
+    	Object leafNode = parent.get(leafName);
+    	if (!isPositive) {
+    		nb = -nb;
+    	}
+    	if (leafNode instanceof Integer) {
+    		parent.put(leafName, ((Integer)leafNode)+nb);
+    	} else if (leafNode instanceof Long) {
+    		parent.put(leafName, ((Long)leafNode)+nb);
+    	} else {
+    		parent.put(leafName, setToZeroWhenUnexistent ? 0 : nb);
+    	}
+    	return true;
+    }
     
 }
