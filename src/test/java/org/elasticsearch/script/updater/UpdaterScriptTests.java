@@ -13,6 +13,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.script.ScriptService.ScriptType;
 import org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
 import org.elasticsearch.test.ElasticsearchIntegrationTest.Scope;
 import org.junit.Test;
@@ -297,7 +298,7 @@ public class UpdaterScriptTests extends AbstractSearchScriptTests {
 	private Map<String, Object> updateAndGetResponse(String action, Object values) {
 		// Update using the script
 		client().prepareUpdate(getIndex(), "article", "1")
-				.setScript("updater").setScriptLang("native")
+				.setScript("updater", ScriptType.INLINE).setScriptLang("native")
 				.addScriptParam(action, values)
 				.get();
 		
